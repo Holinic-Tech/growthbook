@@ -7,7 +7,7 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@growthbook/edge-cloudflare": "^0.3.4"
+    "@growthbook/edge-cloudflare": "*"
   },
   "devDependencies": {
     "wrangler": "^3.0.0"
