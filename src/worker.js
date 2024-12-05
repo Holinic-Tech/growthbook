@@ -2,6 +2,9 @@ import { handleRequest } from '@growthbook/edge-cloudflare';
 
 export default {
  fetch: async function (request, env, ctx) {
+   console.log('Worker triggered:', request.url);
+   console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers)));
+
    const url = new URL(request.url);
    
    // Prevent infinite loops
@@ -97,10 +100,50 @@ export default {
      }
    };
 
-   // Start with a test path to ensure everything works
+   // Handle test path
    if (url.pathname.startsWith('/gb-test')) {
      try {
        console.log('Processing GrowthBook request for:', url.hostname);
+       
+       // Create a simple test page if the path is exactly /gb-test/
+       if (url.pathname === '/gb-test/' || url.pathname === '/gb-test') {
+         return new Response(`
+           <html>
+             <head>
+               <title>GrowthBook Test Page</title>
+               <style>
+                 body { font-family: Arial, sans-serif; margin: 40px; }
+                 .container { max-width: 800px; margin: 0 auto; }
+                 .status { padding: 20px; background: #e8f5e9; border-radius: 8px; margin: 20px 0; }
+                 .info { background: #e3f2fd; padding: 20px; border-radius: 8px; }
+               </style>
+             </head>
+             <body>
+               <div class="container">
+                 <h1>GrowthBook Test Page</h1>
+                 <div class="status">
+                   <h2>✅ Worker Status</h2>
+                   <p>Worker is successfully running on: <strong>${url.hostname}</strong></p>
+                 </div>
+                 <div class="info">
+                   <h2>ℹ️ Environment Information</h2>
+                   <ul>
+                     <li>Hostname: ${url.hostname}</li>
+                     <li>Path: ${url.pathname}</li>
+                     <li>Time: ${new Date().toISOString()}</li>
+                   </ul>
+                 </div>
+                 <p>This page is ready for GrowthBook experiments!</p>
+               </div>
+             </body>
+           </html>
+         `, {
+           headers: {
+             'Content-Type': 'text/html'
+           }
+         });
+       }
+       
        return await handleRequest(newRequest, env, config);
      } catch (error) {
        console.error('GrowthBook error:', error);
