@@ -7,7 +7,7 @@ PROXY_TARGET = "https://hairqare.co"  # Replace with your website URL
 GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 GROWTHBOOK_CLIENT_KEY = "sdk-YkWWu7linds7Sh"     # Replace with your GrowthBook SDK key
 
-# KV Namespace binding
+# KV Namespace binding required
 kv_namespaces = [
   { binding = "KV_GB_PAYLOAD", id = "22a34e8013264310959161e0e333362d" }  # Replace with your KV namespace ID
 ]
