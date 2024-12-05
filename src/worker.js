@@ -14,6 +14,8 @@ export default {
      'Access-Control-Allow-Origin': '*',
      'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
      'Access-Control-Allow-Headers': '*'
+    'Access-Control-Allow-Private-Network': 'true',
+    'Access-Control-Allow-Credentials': 'true'
    };
 
    // Handle preflight
@@ -137,6 +139,7 @@ export default {
          `, {
            headers: {
              'Content-Type': 'text/html',
+              'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io",
              ...corsHeaders
            }
          });
@@ -161,6 +164,7 @@ export default {
      status: response.status,
      headers: {
        ...Object.fromEntries(response.headers),
+      'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io",
        ...corsHeaders
      }
    });
