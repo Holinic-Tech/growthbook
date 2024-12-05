@@ -1,0 +1,15 @@
+{
+  "name": "growthbook-edge",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@growthbook/edge-cloudflare": "^0.3.4"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
