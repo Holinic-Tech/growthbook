@@ -45,10 +45,22 @@ export default {
      enableUrlRedirects: true,
      enableSticky: true,
      enableStreaming: true,
+     enableDevMode: true,
+     apiHost: env.GROWTHBOOK_API_HOST || 'https://cdn.growthbook.io',
+     clientKey: env.GROWTHBOOK_CLIENT_KEY,
+     
+     trackingCallback: (experiment, result) => {
+       console.log('GB Tracking:', experiment, result);
+     },
+
+     onFeatureUsage: (key, value) => {
+       console.log('GB Feature:', key, value);
+     },
      
      edgeTrackingCallback: async (experiment, result) => {
        try {
          const userId = userIdMatch ? userIdMatch[1] : 'anonymous';
+         console.log('GB Edge Tracking:', experiment.key, result);
 
          await fetch('https://api.mixpanel.com/track', {
            method: 'POST',
@@ -88,7 +100,7 @@ export default {
        const utm_campaign = url.searchParams.get('utm_campaign');
        const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
        
-       return {
+       const attrs = {
          path: url.pathname,
          hostname: url.hostname,
          subdomain: url.hostname.split('.')[0],
@@ -97,14 +109,27 @@ export default {
          utm_campaign,
          deviceType: isMobile ? 'mobile' : 'desktop',
          gbCookie,
-         userAgent
+         userAgent,
+         url: request.url
        };
+       
+       console.log('GB Attributes:', attrs);
+       return attrs;
      },
 
      getUserId: async (request) => {
-       return userIdMatch ? userIdMatch[1] : null;
+       const id = userIdMatch ? userIdMatch[1] : null;
+       console.log('GB User ID:', id);
+       return id;
      }
    };
+
+   console.log('GB Config:', {
+     ...config,
+     apiHost: env.GROWTHBOOK_API_HOST,
+     clientKey: env.GROWTHBOOK_CLIENT_KEY,
+     path: url.pathname
+   });
 
    if (url.pathname.startsWith('/gb-test')) {
      try {
@@ -136,7 +161,14 @@ export default {
                    </ul>
                  </div>
                  <p>This page is ready for GrowthBook experiments!</p>
+                 <div id="gb-status"></div>
                </div>
+               <script>
+                 console.log('GrowthBook Test Page Loaded');
+                 const statusDiv = document.getElementById('gb-status');
+                 statusDiv.textContent = 'GrowthBook Status: ' + 
+                   (window.location.search.includes('growthbook=true') ? 'Editor Enabled' : 'Editor Not Enabled');
+               </script>
              </body>
            </html>
          `, {
