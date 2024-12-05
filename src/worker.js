@@ -18,7 +18,8 @@ export default {
    };
 
    const cspHeaders = {
-     'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io"
+  'Content-Security-Policy': "frame-ancestors https://app.growthbook.io",
+  'X-Frame-Options': 'ALLOW-FROM https://app.growthbook.io'
    };
 
    if (request.method === 'OPTIONS') {
