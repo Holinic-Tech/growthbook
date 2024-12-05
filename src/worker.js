@@ -9,21 +9,24 @@ export default {
    const gbCookie = cookies.match(/growthbook=[^;]+/)?.[0];
    const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
    
-   // CORS headers
    const corsHeaders = {
      'Access-Control-Allow-Origin': '*',
      'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-     'Access-Control-Allow-Headers': '*'
-    'Access-Control-Allow-Private-Network': 'true',
-    'Access-Control-Allow-Credentials': 'true'
+     'Access-Control-Allow-Headers': '*',
+     'Access-Control-Allow-Private-Network': 'true',
+     'Access-Control-Allow-Credentials': 'true'
    };
 
-   // Handle preflight
+   const cspHeaders = {
+     'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io"
+   };
+
    if (request.method === 'OPTIONS') {
-     return new Response(null, { headers: corsHeaders });
+     return new Response(null, { 
+       headers: { ...corsHeaders, ...cspHeaders }
+     });
    }
 
-   // Prevent infinite loops
    if (request.headers.get('cf-worker') === 'true') {
      return fetch(request);
    }
@@ -139,8 +142,8 @@ export default {
          `, {
            headers: {
              'Content-Type': 'text/html',
-              'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io",
-             ...corsHeaders
+             ...corsHeaders,
+             ...cspHeaders
            }
          });
        }
@@ -150,7 +153,8 @@ export default {
          status: res.status,
          headers: {
            ...Object.fromEntries(res.headers),
-           ...corsHeaders
+           ...corsHeaders,
+           ...cspHeaders
          }
        });
      } catch (error) {
@@ -164,8 +168,8 @@ export default {
      status: response.status,
      headers: {
        ...Object.fromEntries(response.headers),
-      'Content-Security-Policy': "frame-ancestors 'self' https://app.growthbook.io",
-       ...corsHeaders
+       ...corsHeaders,
+       ...cspHeaders
      }
    });
  }
