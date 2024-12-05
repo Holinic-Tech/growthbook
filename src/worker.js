@@ -3,19 +3,31 @@ import { handleRequest } from '@growthbook/edge-cloudflare';
 export default {
  fetch: async function (request, env, ctx) {
    console.log('Worker triggered:', request.url);
-   console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers)));
-
-   const url = new URL(request.url);
    
+   const url = new URL(request.url);
+   const cookies = request.headers.get('cookie') || '';
+   const gbCookie = cookies.match(/growthbook=[^;]+/)?.[0];
+   const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
+   
+   // CORS headers
+   const corsHeaders = {
+     'Access-Control-Allow-Origin': '*',
+     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+     'Access-Control-Allow-Headers': '*'
+   };
+
+   // Handle preflight
+   if (request.method === 'OPTIONS') {
+     return new Response(null, { headers: corsHeaders });
+   }
+
    // Prevent infinite loops
    if (request.headers.get('cf-worker') === 'true') {
      return fetch(request);
    }
 
-   // Set PROXY_TARGET dynamically based on the incoming request
    env.PROXY_TARGET = `https://${url.hostname}`;
 
-   // Add worker header to prevent loops
    const newRequest = new Request(request, {
      headers: {
        ...Object.fromEntries(request.headers),
@@ -24,18 +36,13 @@ export default {
    });
 
    const config = {
-     // Enable all GrowthBook features
      enableVisualEditor: true,
      enableUrlRedirects: true,
      enableSticky: true,
      enableStreaming: true,
      
-     // Mixpanel tracking integration
      edgeTrackingCallback: async (experiment, result) => {
        try {
-         // Get user ID from cookie or generate anonymous one
-         const cookies = request.headers.get('cookie') || '';
-         const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
          const userId = userIdMatch ? userIdMatch[1] : 'anonymous';
 
          await fetch('https://api.mixpanel.com/track', {
@@ -67,18 +74,13 @@ export default {
        }
      },
 
-     // Additional attributes for targeting
      attributes: async (request) => {
        const url = new URL(request.url);
        const userAgent = request.headers.get('user-agent') || '';
-       const cookies = request.headers.get('cookie') || '';
        
-       // UTM parameters
        const utm_source = url.searchParams.get('utm_source');
        const utm_medium = url.searchParams.get('utm_medium');
        const utm_campaign = url.searchParams.get('utm_campaign');
-
-       // Device detection
        const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
        
        return {
@@ -89,23 +91,18 @@ export default {
          utm_medium,
          utm_campaign,
          deviceType: isMobile ? 'mobile' : 'desktop',
+         gbCookie,
+         userAgent
        };
      },
 
-     // User ID management
      getUserId: async (request) => {
-       const cookies = request.headers.get('cookie') || '';
-       const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
        return userIdMatch ? userIdMatch[1] : null;
      }
    };
 
-   // Handle test path
    if (url.pathname.startsWith('/gb-test')) {
      try {
-       console.log('Processing GrowthBook request for:', url.hostname);
-       
-       // Create a simple test page if the path is exactly /gb-test/
        if (url.pathname === '/gb-test/' || url.pathname === '/gb-test') {
          return new Response(`
            <html>
@@ -139,20 +136,33 @@ export default {
            </html>
          `, {
            headers: {
-             'Content-Type': 'text/html'
+             'Content-Type': 'text/html',
+             ...corsHeaders
            }
          });
        }
        
-       return await handleRequest(newRequest, env, config);
+       const res = await handleRequest(newRequest, env, config);
+       return new Response(res.body, {
+         status: res.status,
+         headers: {
+           ...Object.fromEntries(res.headers),
+           ...corsHeaders
+         }
+       });
      } catch (error) {
        console.error('GrowthBook error:', error);
-       // Fallback to normal request if GrowthBook fails
        return fetch(request);
      }
    }
 
-   // For all other paths, pass through normally for now
-   return fetch(request);
+   const response = await fetch(request);
+   return new Response(response.body, {
+     status: response.status,
+     headers: {
+       ...Object.fromEntries(response.headers),
+       ...corsHeaders
+     }
+   });
  }
 };
