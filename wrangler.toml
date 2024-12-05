@@ -10,6 +10,7 @@ MIXPANEL_TOKEN = "1120883bc91fa6ed5677f489468e1942"
 RUN_VISUAL_EDITOR_EXPERIMENTS = "everywhere"
 RUN_URL_REDIRECT_EXPERIMENTS = "everywhere"
 ENABLE_STICKY_BUCKETING = "true"
+ENABLE_STREAMING = "true"
 # KV Namespace binding required
 kv_namespaces = [
   { binding = "KV_GB_PAYLOAD", id = "22a34e8013264310959161e0e333362d" }  # Replace with your KV namespace ID
