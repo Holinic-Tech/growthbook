@@ -77,28 +77,35 @@ export default {
       edgeTrackingCallback: async (experiment, result) => {
         console.log('Edge Tracking Callback:', experiment.key, result);
         try {
+          const timestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+          const insertId = `${timestamp}-${Math.random()
+            .toString(36)
+            .substring(2, 15)}`; // Unique $insert_id
+
+          const trackData = {
+            event: 'Experiment Viewed',
+            properties: {
+              token: env.MIXPANEL_TOKEN,
+              distinct_id: userId,
+              $insert_id: insertId,
+              experiment_id: experiment.key,
+              variation_id: result.variationId,
+              variation_value: result.value,
+              in_experiment: result.inExperiment,
+              url: request.url,
+              domain: url.hostname,
+              timestamp: new Date().toISOString(),
+              $browser: request.headers.get('user-agent'),
+              environment: env.ENVIRONMENT || 'production',
+            },
+          }
           await fetch('https://api.mixpanel.com/track', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Basic ${btoa(env.MIXPANEL_TOKEN + ':')}`,
+              Accept: 'text/plain',
             },
-            body: JSON.stringify({
-              event: 'Experiment Viewed',
-              properties: {
-                token: env.MIXPANEL_TOKEN,
-                distinct_id: userId,
-                experiment_id: experiment.key,
-                variation_id: result.variationId,
-                variation_value: result.value,
-                in_experiment: result.inExperiment,
-                url: request.url,
-                domain: url.hostname,
-                timestamp: new Date().toISOString(),
-                $browser: request.headers.get('user-agent'),
-                environment: env.ENVIRONMENT || 'production',
-              },
-            }),
+            body: JSON.stringify([trackData]),
           });
         } catch (error) {
           console.error('Mixpanel tracking error:', error);
