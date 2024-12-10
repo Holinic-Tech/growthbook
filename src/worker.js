@@ -97,6 +97,7 @@ export default {
               timestamp: new Date().toISOString(),
               $browser: request.headers.get('user-agent'),
               environment: env.ENVIRONMENT || 'production',
+              $source: 'growthbook'
             },
           }
           await fetch('https://api.mixpanel.com/track', {
