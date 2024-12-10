@@ -6,8 +6,9 @@ export default {
 
     const url = new URL(request.url);
     const cookies = request.headers.get('cookie') || '';
-    const gbCookie = cookies.match(/growthbook=[^;]+/)?.[0] || ""; // Ensure gbCookie is initialized
+    const gbCookie = cookies.match(/growthbook=([^;]+)/)?.[1] || ""; // Extract only the value
     const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
+    const userId = userIdMatch ? userIdMatch[1] : 'anonymous';
 
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
@@ -44,7 +45,6 @@ export default {
       }
     }
 
-    // Create a new request for forwarding
     const newRequest = new Request(request.url, {
       method: request.method,
       headers: {
@@ -54,6 +54,9 @@ export default {
       body: body, // Use reconstructed body
     });
 
+    console.log('Request forwarding check', newRequest);
+
+    // GrowthBook configuration
     const config = {
       enableVisualEditor: true,
       enableUrlRedirects: true,
@@ -72,14 +75,11 @@ export default {
       },
 
       edgeTrackingCallback: async (experiment, result) => {
+        console.log('Edge Tracking Callback:', experiment.key, result);
         try {
-          const userId = userIdMatch ? userIdMatch[1] : 'anonymous';
-          console.log('GB Edge Tracking:', experiment.key, result);
-
           await fetch('https://api.mixpanel.com/track', {
             method: 'POST',
             headers: {
-              Accept: 'text/plain',
               'Content-Type': 'application/json',
               Authorization: `Basic ${btoa(env.MIXPANEL_TOKEN + ':')}`,
             },
@@ -106,9 +106,7 @@ export default {
       },
 
       attributes: async (request) => {
-        const url = new URL(request.url);
         const userAgent = request.headers.get('user-agent') || '';
-
         const utm_source = url.searchParams.get('utm_source');
         const utm_medium = url.searchParams.get('utm_medium');
         const utm_campaign = url.searchParams.get('utm_campaign');
@@ -132,9 +130,8 @@ export default {
       },
 
       getUserId: async (request) => {
-        const id = userIdMatch ? userIdMatch[1] : null;
-        console.log('GB User ID:', id);
-        return id;
+        console.log('GB User ID:', userId);
+        return userId;
       },
     };
 
@@ -214,7 +211,7 @@ export default {
 
     let response;
     try {
-      response = await fetch(newRequest);
+      response = await handleRequest(newRequest, env, config);
     } catch (error) {
       console.error('Error forwarding request:', error);
       return new Response('Internal Server Error', { status: 500 });
