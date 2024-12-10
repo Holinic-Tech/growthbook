@@ -75,6 +75,24 @@ export default {
       },
 
       edgeTrackingCallback: async (experiment, result) => {
+        // Import Intl.DateTimeFormat for timezone conversion
+        const getBerlinTimestamp = () => {
+          const options = {
+            timeZone: "Europe/Berlin",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          };
+
+          const berlinDate = new Intl.DateTimeFormat("en-GB", options).format(new Date());
+          const [date, time] = berlinDate.split(", ");
+          return `${date.split("/").reverse().join("-")}T${time}+01:00`; // Adjust offset for Berlin
+        };
+
         console.log('Edge Tracking Callback:', experiment.key, result);
         try {
           const timestamp = Math.floor(Date.now() / 1000); // Current time in seconds
@@ -94,7 +112,8 @@ export default {
               in_experiment: result.inExperiment,
               url: request.url,
               domain: url.hostname,
-              timestamp: new Date().toISOString(),
+              timestamp: getBerlinTimestamp(), // Convert to Europe/Berlin timezone
+              timezone: "Europe/Berlin", // Explicit timezone information
               $browser: request.headers.get('user-agent'),
               environment: env.ENVIRONMENT || 'production',
               $source: 'growthbook'
