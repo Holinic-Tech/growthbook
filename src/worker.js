@@ -111,6 +111,7 @@ export default {
               variation_value: result.value,
               in_experiment: result.inExperiment,
               url: request.url,
+              logged_in: true,
               domain: url.hostname,
               timestamp: getBerlinTimestamp(), // Convert to Europe/Berlin timezone
               timezone: "Europe/Berlin", // Explicit timezone information
@@ -141,6 +142,7 @@ export default {
 
         const attrs = {
           path: url.pathname,
+          logged_in: true,
           hostname: url.hostname,
           subdomain: url.hostname.split('.')[0],
           utm_source,
