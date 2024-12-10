@@ -83,7 +83,7 @@ export default {
             .substring(2, 15)}`; // Unique $insert_id
 
           const trackData = {
-            event: 'Experiment Viewed',
+            event: '$experiment_started',
             properties: {
               token: env.MIXPANEL_TOKEN,
               distinct_id: userId,
