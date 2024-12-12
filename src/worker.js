@@ -252,13 +252,13 @@ export default {
         let response;
         try {
             response = await handleRequest(newRequest, env, config);
-            
+
             // Only modify HTML responses
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('text/html')) {
                 let html = await response.text();
                 html = injectServiceWorkerCode(html);
-                
+
                 return new Response(html, {
                     status: response.status,
                     headers: {
@@ -269,7 +269,7 @@ export default {
                     },
                 });
             }
-            
+
             return new Response(response.body, {
                 status: response.status,
                 headers: {
