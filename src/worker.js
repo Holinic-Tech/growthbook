@@ -9,6 +9,9 @@ export default {
         const gbCookie = cookies.match(/growthbook=([^;]+)/)?.[1] || "";
         const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
         const userId = userIdMatch ? userIdMatch[1] : '';
+        // Add Mixpanel distinct ID extraction
+        const mpDistinctIdMatch = cookies.match(/mp_distinct_id=([^;]+)/);
+        const mpDistinctId = mpDistinctIdMatch ? mpDistinctIdMatch[1] : null;
 
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
@@ -97,6 +100,11 @@ export default {
                         }
                     };
 
+                    // Add distinct_id if available from cookie
+                    if (mpDistinctId) {
+                        trackData.properties.distinct_id = mpDistinctId;
+                    }
+
                     await fetch('https://api.mixpanel.com/track', {
                         method: 'POST',
                         headers: {
@@ -129,6 +137,8 @@ export default {
                     gbCookie,
                     userAgent,
                     url: request.url,
+                    // Add Mixpanel distinct ID to attributes if available
+                    mixpanel_distinct_id: mpDistinctId || undefined
                 };
 
                 console.log('GB Attributes:', attrs);
