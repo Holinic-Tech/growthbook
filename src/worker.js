@@ -6,12 +6,18 @@ export default {
 
         const url = new URL(request.url);
         const cookies = request.headers.get('cookie') || '';
+        console.log('All cookies received:', cookies);
+
         const gbCookie = cookies.match(/growthbook=([^;]+)/)?.[1] || "";
         const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
         const userId = userIdMatch ? userIdMatch[1] : '';
-        // Add Mixpanel distinct ID extraction
+
+        // Add detailed logging for Mixpanel cookie extraction
         const mpDistinctIdMatch = cookies.match(/mp_distinct_id=([^;]+)/);
+        console.log('Mixpanel cookie match result:', mpDistinctIdMatch);
+        
         const mpDistinctId = mpDistinctIdMatch ? mpDistinctIdMatch[1] : null;
+        console.log('Extracted Mixpanel distinct ID:', mpDistinctId);
 
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
@@ -102,8 +108,13 @@ export default {
 
                     // Add distinct_id if available from cookie
                     if (mpDistinctId) {
+                        console.log('Adding Mixpanel distinct ID to track event:', mpDistinctId);
                         trackData.properties.distinct_id = mpDistinctId;
+                    } else {
+                        console.log('No Mixpanel distinct ID available for track event');
                     }
+
+                    console.log('Sending track data to Mixpanel:', JSON.stringify(trackData));
 
                     await fetch('https://api.mixpanel.com/track', {
                         method: 'POST',
