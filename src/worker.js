@@ -28,7 +28,7 @@ export default {
         const cookies = request.headers.get('cookie') || '';
         const gbCookie = cookies.match(/growthbook=([^;]+)/)?.[1] || "";
         const userIdMatch = cookies.match(/gbuuid=([^;]+)/);
-        const userId = userIdMatch ? userIdMatch[1] : 'anonymous';
+        const userId = userIdMatch ? userIdMatch[1] : '';
 
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
@@ -105,65 +105,65 @@ export default {
                 console.log('GB Feature:', key, value);
             },
 
-edgeTrackingCallback: async (experiment, result) => {
-    const getBerlinTimestamp = () => {
-        const options = {
-            timeZone: "Europe/Berlin",
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-        };
+            edgeTrackingCallback: async (experiment, result) => {
+                const getBerlinTimestamp = () => {
+                    const options = {
+                        timeZone: "Europe/Berlin",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                    };
 
-        const berlinDate = new Intl.DateTimeFormat("en-GB", options).format(new Date());
-        const [date, time] = berlinDate.split(", ");
-        return `${date.split("/").reverse().join("-")}T${time}+01:00`;
-    };
+                    const berlinDate = new Intl.DateTimeFormat("en-GB", options).format(new Date());
+                    const [date, time] = berlinDate.split(", ");
+                    return `${date.split("/").reverse().join("-")}T${time}+01:00`;
+                };
 
-    console.log('Edge Tracking Callback:', experiment.key, result);
-    try {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const insertId = `${timestamp}-${Math.random().toString(36).substring(2, 15)}`;
+                console.log('Edge Tracking Callback:', experiment.key, result);
+                try {
+                    const timestamp = Math.floor(Date.now() / 1000);
+                    const insertId = `${timestamp}-${Math.random().toString(36).substring(2, 15)}`;
 
-        const trackData = {
-            event: '$experiment_started',
-            properties: {
-                token: env.MIXPANEL_TOKEN,
-                $insert_id: insertId,
-                "Experiment name": experiment.key,
-                "Variant name": result.variationId,
-                variation_value: result.value,
-                in_experiment: result.inExperiment,
-                url: request.url,
-                domain: url.hostname,
-                timestamp: getBerlinTimestamp(),
-                timezone: "Europe/Berlin",
-                $browser: request.headers.get('user-agent'),
-                environment: env.ENVIRONMENT || 'production',
-                $source: 'growthbook'
-            }
-        };
+                    const trackData = {
+                        event: '$experiment_started',
+                        properties: {
+                            token: env.MIXPANEL_TOKEN,
+                            $insert_id: insertId,
+                            "Experiment name": experiment.key,
+                            "Variant name": result.variationId,
+                            variation_value: result.value,
+                            in_experiment: result.inExperiment,
+                            url: request.url,
+                            domain: url.hostname,
+                            timestamp: getBerlinTimestamp(),
+                            timezone: "Europe/Berlin",
+                            $browser: request.headers.get('user-agent'),
+                            environment: env.ENVIRONMENT || 'production',
+                            $source: 'growthbook'
+                        }
+                    };
 
-        // Only add distinct_id if we have a user ID
-        if (userId) {
-            trackData.properties.distinct_id = userId;
-        }
+                    if (userId) {
+                        trackData.properties.distinct_id = userId;
+                    }
 
-        await fetch('https://api.mixpanel.com/track', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'text/plain',
+                    await fetch('https://api.mixpanel.com/track', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'text/plain',
+                        },
+                        body: JSON.stringify([trackData]),
+                    });
+                } catch (error) {
+                    console.error('Mixpanel tracking error:', error);
+                }
             },
-            body: JSON.stringify([trackData]),
-        });
-    } catch (error) {
-        console.error('Mixpanel tracking error:', error);
-    }
-};
+
             attributes: async (request) => {
                 const userAgent = request.headers.get('user-agent') || '';
                 const utm_source = url.searchParams.get('utm_source');
@@ -256,7 +256,6 @@ edgeTrackingCallback: async (experiment, result) => {
         try {
             response = await handleRequest(newRequest, env, config);
 
-            // Only modify HTML responses
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('text/html')) {
                 let html = await response.text();
