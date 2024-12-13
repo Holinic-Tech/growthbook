@@ -3,6 +3,8 @@ import { handleRequest } from '@growthbook/edge-cloudflare';
 export default {
     fetch: async function (request, env, ctx) {
         console.log('Worker triggered:', request.url);
+                console.log('Incoming request URL:', request.url);
+        console.log('Request headers:', Object.fromEntries(request.headers));
 
         const url = new URL(request.url);
         const cookies = request.headers.get('cookie') || '';
